@@ -1,3 +1,8 @@
+Custom fork of the original PyTorch implementation for Stylegan2 by Rosalinity (https://github.com/rosinality/stylegan2-pytorch) with added support for:
+- Loading conditional models (~Pbaylies fork) (https://github.com/pbaylies/stylegan2)
+- Network bending (https://github.com/terrybroad/network-bending)
+
+
 # StyleGAN 2 in PyTorch
 
 Implementation of Analyzing and Improving the Image Quality of StyleGAN (https://arxiv.org/abs/1912.04958) in PyTorch

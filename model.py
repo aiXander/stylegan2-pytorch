@@ -294,12 +294,12 @@ class NoiseInjection(nn.Module):
 
         self.weight = nn.Parameter(torch.zeros(1))
 
-    def forward(self, image, noise=None):
+    def forward(self, image, noise=None, noise_multiplier = 1):
         if noise is None:
             batch, _, height, width = image.shape
             noise = image.new_empty(batch, 1, height, width).normal_()
 
-        return image + self.weight * noise
+        return image + noise_multiplier * self.weight * noise
 
 
 class ConstantInput(nn.Module):
@@ -345,9 +345,9 @@ class StyledConv(nn.Module):
         self.activate = FusedLeakyReLU(out_channel)
         self.manipulation = ManipulationLayer(layerID)
 
-    def forward(self, input, style, noise=None, transform_dict_list=[]):
+    def forward(self, input, style, noise=None, transform_dict_list=[], noise_multiplier = 1):
         out = self.conv(input, style)
-        out = self.noise(out, noise=noise)
+        out = self.noise(out, noise=noise, noise_multiplier = noise_multiplier)
         # out = out + self.bias
         out = self.activate(out)
         out = self.manipulation(out, transform_dict_list)
@@ -472,15 +472,12 @@ class Generator(nn.Module):
 
         self.n_latent = self.log_size * 2 - 2
 
-    def make_noise(self):
+    def make_noise(self, n):
         device = self.input.input.device
-
-        noises = [torch.randn(1, 1, 2 ** 2, 2 ** 2, device=device)]
-
+        noises = [torch.randn(n, 1, 2 ** 2, 2 ** 2, device=device)]
         for i in range(3, self.log_size + 1):
             for _ in range(2):
-                noises.append(torch.randn(1, 1, 2 ** i, 2 ** i, device=device))
-
+                noises.append(torch.randn(n, 1, 2 ** i, 2 ** i, device=device))
         return noises
 
     def mean_latent(self, n_latent):
@@ -514,8 +511,9 @@ class Generator(nn.Module):
         input_is_latent=False,
         noise=None,
         randomize_noise=True,
+        noise_multiplier = 1,
         normalize = True,
-        transform_dict_list=[]
+        transform_dict_list=[],
     ):  
         if not input_is_latent:
             styles = self.get_latent(styles, 
@@ -539,13 +537,13 @@ class Generator(nn.Module):
                 noise = [getattr(self.noises, f'noise_{i}') for i in range(self.num_layers)]
                 
         out = self.input(latent)
-        out = self.conv1(out, latent[:, 0], noise=noise[0])
+        out = self.conv1(out, latent[:, 0], noise=noise[0], noise_multiplier= noise_multiplier)
         skip = self.to_rgb1(out, latent[:, 1])
 
         i = 1
         for conv1, conv2, noise1, noise2, to_rgb in zip(self.convs[::2], self.convs[1::2], noise[1::2], noise[2::2], self.to_rgbs):
-            out = conv1(out, latent[:, i], noise=noise1, transform_dict_list=transform_dict_list)
-            out = conv2(out, latent[:, i + 1], noise=noise2, transform_dict_list=transform_dict_list)
+            out = conv1(out, latent[:, i], noise=noise1, transform_dict_list=transform_dict_list, noise_multiplier= noise_multiplier)
+            out = conv2(out, latent[:, i + 1], noise=noise2, transform_dict_list=transform_dict_list, noise_multiplier= noise_multiplier)
             skip = to_rgb(out, latent[:, i + 2], skip)
             i += 2
 

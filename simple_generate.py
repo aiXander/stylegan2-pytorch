@@ -36,7 +36,7 @@ def sample_random(g_ema, _N = 512, truncation=1):
     if transform_dict['layerID'] == self.layerID:
         out = self.layer_options[transform_dict['transformID']](out, transform_dict['params'], transform_dict['indicies'])
     '''
-
+    
     horizontal_flip = {}
     horizontal_flip['layerID'] = 2
     horizontal_flip['transformID'] = 'translate'

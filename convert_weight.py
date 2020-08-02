@@ -284,7 +284,7 @@ if __name__ == '__main__':
 
     print("Saving PyTorch model to disk...")
     name = os.path.splitext(os.path.basename(args.path))[0]
-    torch.save(ckpt, name + '.pt')
+    torch.save(ckpt, os.path.join(os.path.dirname(args.path), name + '.pt'))
 
     print("Preparing to test conversion, placing PyTorch model onto GPU..")
     batch_size = {256: 16, 512: 9, 1024: 4}
